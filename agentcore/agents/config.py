@@ -8,7 +8,14 @@ REGION = "us-east-1"
 
 # Your Bedrock Knowledge Base ID
 # REPLACE THIS WITH YOURS
-KB_ID = "ME7YGVMHO0"
+KB_ID = "XXXXXXXX"
+
+# AgentCore settings
+# AgentCore Memory
+BEDROCK_AGENTCORE_MEMORY_ID = ""
+
+# AgentCore inference model
+BEDROCK_AGENTCORE_INFERENCE_MODEL = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
 
 # DO NOT REPLACE THIS ONE
 if KB_ID == "XXXXXXXX":

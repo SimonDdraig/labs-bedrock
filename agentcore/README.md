@@ -37,10 +37,11 @@ https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agentcore-regions.
   - Short-term
     - Short-term memory captures turn-by-turn interactions within a single session. This lets agents maintain immediate context without requiring users to repeat information.
       - Example: When a user asks, "What's the weather like in Seattle?" and follows up with "What about tomorrow?", the agent relies on recent conversation history to understand that "tomorrow" refers to the weather in Seattle.
+    - AgentCore MCP Server states this is stored in DynamoDB
   - Long-term
     - Long-term memory automatically extracts and stores key insights from conversations across multiple sessions, including user preferences, important facts, and session summaries — for persistent knowledge retention across multiple sessions.
       - Example: If a customer mentions they prefer window seats during flight booking, the agent stores this preference in long-term memory. In future interactions, the agent can proactively offer window seats, creating a personalized experience.
-- Backend: ChromaDB???
+    - AgentCore MCP Server states this is stored in OpenSearch
 
 ### AgentCore Gateway
 - Gateway provides an easy and secure way for developers to build, deploy, discover, and connect to tools at scale

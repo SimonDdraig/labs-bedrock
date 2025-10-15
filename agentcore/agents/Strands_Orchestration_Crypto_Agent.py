@@ -20,6 +20,8 @@ LINKS:
 - GoPlus API used: https://api.gopluslabs.io/api/v1/token_security/{chain_id}
 """
 
+import os
+
 from strands import Agent
 from strands.models import BedrockModel
 from Strands_Agent_KB_Bedrock import crypto_educator
@@ -27,6 +29,18 @@ from Strands_Agent_MCP_CoinGecko import crypto_market_analyst
 from Strands_Agent_API import crypto_security_analyzer
 from Strands_Agent_General import general_knowledge
 from config import INFERENCE_MODEL, REGION
+
+from bedrock_agentcore.memory.integrations.strands.config import (
+    AgentCoreMemoryConfig,
+    RetrievalConfig,
+)
+from bedrock_agentcore.memory.integrations.strands.session_manager import (
+    AgentCoreMemorySessionManager,
+)
+from bedrock_agentcore.tools.code_interpreter_client import CodeInterpreter
+from bedrock_agentcore.runtime import BedrockAgentCoreApp
+
+app = BedrockAgentCoreApp()
 
 import argparse
 
@@ -122,6 +136,8 @@ You are a high-level orchestration agent responsible for understanding user prom
 - Always route the full prompt to exactly **one** sub-agent.
 - Always confirm your understanding before routing to ensure accurate assistance.
 """
+
+
 class CryptoOrchestrator:
     def __init__(self):
         self.agent = self._initialize_agent()
@@ -137,7 +153,12 @@ class CryptoOrchestrator:
             name="CryptoOrchestrator",
             system_prompt=CRYPTO_SYSTEM_PROMPT,
             model=bedrock_model,
-            tools=[crypto_educator, crypto_market_analyst, crypto_security_analyzer, general_knowledge]
+            tools=[
+                crypto_educator,
+                crypto_market_analyst,
+                crypto_security_analyzer,
+                general_knowledge,
+            ],
         )
 
     def query(self, question):
@@ -156,6 +177,7 @@ class CryptoOrchestrator:
             },
         }
         return result
+
 
 def main():
     parser = argparse.ArgumentParser(description="Crypto Orchestration Agent")

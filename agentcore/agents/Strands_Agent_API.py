@@ -56,6 +56,7 @@ url="https://api.gopluslabs.io/api/v1/token_security/1?contract_addresses=0x123a
 You will be given:
 - A `chain_id` (e.g., `1` for Ethereum, `56` for BNB Chain)
 - A `contract_address` of a token on that chain.
+If you are not provided these, you must ask the user to supply them before calling the API.
 
 ## Instructions
 1. Use `http_request.get` to call the API with the provided `chain_id` and `contract_address`.
