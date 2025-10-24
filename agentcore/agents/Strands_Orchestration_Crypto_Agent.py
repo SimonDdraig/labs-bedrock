@@ -1,5 +1,5 @@
 """
-Crypto orchestration Agent to utilize sub-agents and tools at its disposal to answer a user query
+Crypto Orchestration Agent to utilize sub-agents and tools at its disposal to answer a user query
 
 SETUP INSTRUCTIONS:
 1. CREDENTIALS:
@@ -11,38 +11,22 @@ SETUP INSTRUCTIONS:
    - Enable model access in Amazon Bedrock console as described in the sub agents
 
 3. KNOWLEDGE BASE:
-   - Requires pre-configured KB ID as described in the sub agents
+   - Requires pre-configured KB ID as described in the sub agents - created via lab 1
 
 LINKS:
 - Credentials Guide: https://strandsagents.com/latest/user-guide/quickstart/#configuring-credentials
-- Retrieve Tool: https://github.com/strands-agents/tools/blob/main/src/strands_tools/http_request.py
-- GoPlus: https://docs.gopluslabs.io/reference/api-overview
-- GoPlus API used: https://api.gopluslabs.io/api/v1/token_security/{chain_id}
+- Orchestration Agent: https://strandsagents.com/latest/documentation/docs/user-guide/concepts/multi-agent/agents-as-tools/
 """
 
-import os
-
+import argparse
 from strands import Agent
+from bedrock_agentcore import BedrockAgentCoreApp
 from strands.models import BedrockModel
 from Strands_Agent_KB_Bedrock import crypto_educator
 from Strands_Agent_MCP_CoinGecko import crypto_market_analyst
 from Strands_Agent_API import crypto_security_analyzer
 from Strands_Agent_General import general_knowledge
 from config import INFERENCE_MODEL, REGION
-
-from bedrock_agentcore.memory.integrations.strands.config import (
-    AgentCoreMemoryConfig,
-    RetrievalConfig,
-)
-from bedrock_agentcore.memory.integrations.strands.session_manager import (
-    AgentCoreMemorySessionManager,
-)
-from bedrock_agentcore.tools.code_interpreter_client import CodeInterpreter
-from bedrock_agentcore.runtime import BedrockAgentCoreApp
-
-app = BedrockAgentCoreApp()
-
-import argparse
 
 # Define a crypto-focused system prompt
 CRYPTO_SYSTEM_PROMPT = """
@@ -137,10 +121,9 @@ You are a high-level orchestration agent responsible for understanding user prom
 - Always confirm your understanding before routing to ensure accurate assistance.
 """
 
-
 class CryptoOrchestrator:
     def __init__(self):
-        self.agent = self._initialize_agent()
+        self.orchestrator_agent = self._initialize_agent()
 
     def _initialize_agent(self):
         """Initialize the Bedrock model and crypto agent"""
@@ -163,7 +146,7 @@ class CryptoOrchestrator:
 
     def query(self, question):
         """Query the agent and return formatted response"""
-        response = self.agent(question)
+        response = self.orchestrator_agent(question)
 
         # Format the output
         result = {
@@ -178,33 +161,25 @@ class CryptoOrchestrator:
         }
         return result
 
+# NOTE define all of these outside the invoke function to avoid re-initialization on each call
 
-def main():
-    parser = argparse.ArgumentParser(description="Crypto Orchestration Agent")
-    parser.add_argument("question", nargs="?", help="Your crypto question")
-    args = parser.parse_args()
+# Initialize Bedrock AgentCore App
+app = BedrockAgentCoreApp()
 
-    orchestrator = CryptoOrchestrator()
+# Initialize the Crypto Orchestrator
+orchestrator = CryptoOrchestrator()
 
-    if args.question:
-        # Single query mode - Process command-line question
-        result = orchestrator.query(args.question)
-        print(f"\n{result['answer']}\n")
-    else:
-        # Interactive mode
-        print("Crypto Orchestrator Agent (type 'exit' to quit)")
-        while True:
-            question = input("\nYour question: ").strip()
-            if question.lower() in ("exit", "quit"):
-                break
-            if question:
-                result = orchestrator.query(question)
-
-    # Print results
-    print("\n=== METRICS ===")
-    for k, v in result["metrics"].items():
-        print(f"{k.replace('_', ' ').title()}: {v}")
-
+@app.entrypoint
+def invoke(payload):
+    user_message = payload.get("prompt", "Hello")
+    # to call the orchestrator agent directly
+    #result = orchestrator.orchestrator_agent(user_message)
+    # but we want to use the query so we can get some metrics in this lab example
+    result = orchestrator.query(user_message)
+    return {
+        "answer": result["answer"],
+        "metrics": result["metrics"],
+    }
 
 if __name__ == "__main__":
-    main()
+    app.run()

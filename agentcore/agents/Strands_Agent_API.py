@@ -1,5 +1,5 @@
 """
-Crypto Education Agent using HTTP Request for APIs
+Crypto Education Agent Tool using HTTP Request for APIs
 
 SETUP INSTRUCTIONS:
 1. CREDENTIALS:
@@ -20,21 +20,16 @@ LINKS:
 - GoPlus API used: https://api.gopluslabs.io/api/v1/token_security/{chain_id}
 """
 
-# This example queries the goplus api
-
+# This example queries the goplus api to get token security information
 from strands import Agent, tool
 from strands.models import BedrockModel
 from strands_tools import http_request
 from config import INFERENCE_MODEL, REGION
 import os
 
-# ===== CONFIGURATION =====
-# Set environment variables
-os.environ["AWS_REGION"] = REGION
-
 # Define a crypto-focused system prompt
 CRYPTO_SYSTEM_PROMPT = """
-# Token Security Analyzer Agent (GoPlus API)
+# Token Security Analyzer Agent Tool (GoPlus API)
 
 You are a specialized agent that analyzes the **security risk of cryptocurrency tokens** using the **GoPlus Labs Token Security API**.
 
@@ -100,6 +95,23 @@ If the API fails or the token is not found:
 - Never provide investment recommendations.
 """
 
+# ===== CONFIGURATION =====
+# Set environment variables
+os.environ["AWS_REGION"] = REGION
+
+# NOTE define all of these outside the invoke function to avoid re-initialization on each call
+
+# Create a BedrockModel with specific LLM and region
+bedrock_model = BedrockModel(model_id=INFERENCE_MODEL, region_name=REGION)
+
+# Create the strands agent and add the KB to the agent's tools
+kb_agent = Agent(
+   name="CryptoRiskDetectionAgent",
+   system_prompt=CRYPTO_SYSTEM_PROMPT,
+   model=bedrock_model,
+   tools=[http_request],
+)
+
 @tool
 def crypto_security_analyzer(query: str) -> str:
    """
@@ -112,17 +124,6 @@ def crypto_security_analyzer(query: str) -> str:
       A detailed and helpful token risk analysis with citations
    """
 
-   # Create a BedrockModel with specific LLM and region
-   bedrock_model = BedrockModel(model_id=INFERENCE_MODEL, region_name=REGION)
-
-   # Create the strands agent and add the KB to the agent's tools
-   kb_agent = Agent(
-      name="CryptoRiskDetectionAgent",
-      system_prompt=CRYPTO_SYSTEM_PROMPT,
-      model=bedrock_model,
-      tools=[http_request],
-   )
-
    # Query the agent
    response = kb_agent(query)
-   return response
+   return str(response)

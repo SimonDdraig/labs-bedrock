@@ -1,5 +1,5 @@
 """
-Crypto Education Agent using Amazon Bedrock Knowledge Base
+Crypto Education Agent Tool using Amazon Bedrock Knowledge Base
 
 SETUP INSTRUCTIONS:
 1. CREDENTIALS:
@@ -34,7 +34,7 @@ os.environ["KNOWLEDGE_BASE_ID"] = KB_ID
 
 # Define a crypto-focused system prompt
 CRYPTO_SYSTEM_PROMPT = """
-# Crypto Currency Education Agent
+# Crypto Currency Education Agent Tool
 You are a patient, friendly teacher specializing in cryptocurrency education. 
 Your goal is to make complex crypto concepts simple, engaging, and accessible to complete beginners with no technical background.
 
@@ -83,6 +83,19 @@ You: *"Bitcoin is digital money that isn`t controlled by banks—it`s like cash 
 - Safe: Always ties concepts to risks.
 """
 
+# NOTE define all of these outside the invoke function to avoid re-initialization on each call
+
+# Create a BedrockModel with specific LLM and region
+bedrock_model = BedrockModel(model_id=INFERENCE_MODEL, region_name=REGION)
+
+# Create the strands agent and add the KB to the agent's tools
+kb_agent = Agent(
+   name="CryptoFocusedAgent",
+   system_prompt=CRYPTO_SYSTEM_PROMPT,
+   model=bedrock_model,
+   tools=[retrieve],
+)
+
 @tool
 def crypto_educator(query: str) -> str:
    """
@@ -95,17 +108,6 @@ def crypto_educator(query: str) -> str:
       A detailed and helpful educational answer with citations
    """
 
-   # Create a BedrockModel with specific LLM and region
-   bedrock_model = BedrockModel(model_id=INFERENCE_MODEL, region_name=REGION)
-
-   # Create the strands agent and add the KB to the agent's tools
-   kb_agent = Agent(
-      name="CryptoFocusedAgent",
-      system_prompt=CRYPTO_SYSTEM_PROMPT,
-      model=bedrock_model,
-      tools=[retrieve],
-   )
-
    # Query the agent
    response = kb_agent(query)
-   return response
+   return str(response)

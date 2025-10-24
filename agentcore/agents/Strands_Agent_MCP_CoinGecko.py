@@ -1,11 +1,14 @@
 """
-Crypto Token Live Pricing Agent using CoinGecko MCP
+Crypto Token Live Pricing Agent Tool using CoinGecko MCP
 
 SETUP INSTRUCTIONS:
 1. CREDENTIALS:
    - Local: Configure AWS credentials using `aws configure`
    - Cloud (EC2/ECS/Lambda): Use IAM roles
    - Alternative: Set env vars (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+
+   2. MCP ACCESS:
+   - Enable any MCP access and auth reqd (none for this example)
 
 LINKS:
 - Credentials Guide: https://strandsagents.com/latest/user-guide/quickstart/#configuring-credentials
@@ -27,7 +30,7 @@ os.environ["AWS_REGION"] = REGION
 
 # define a crypto-focused system prompt
 CRYPTO_SYSTEM_PROMPT = """
-# Crypto Price & Market Data Agent (CoinGecko MCP)
+# Crypto Price & Market Data Agent Tool (CoinGecko MCP)
 
 You are a real-time crypto market data assistant. You specialize in answering user questions about **current prices**, **market capitalization**, **volume**, **trending coins**, **NFT floor prices**, and **historical charts** using the **CoinGecko MCP tool**.
 
@@ -82,6 +85,23 @@ If no results are returned or the coin/NFT is not found:
 - Keep responses brief, informative, and neutral (no investment advice).
 """
 
+# NOTE define all of these outside the invoke function to avoid re-initialization on each call
+
+# Create a BedrockModel with specific LLM and region
+bedrock_model = BedrockModel(model_id=INFERENCE_MODEL, region_name=REGION)
+# Connect to the CoinGecko MCP server - able to return live prices of tokens - coingecko_api_remote
+coingecko_mcp_client = MCPClient(
+    lambda: stdio_client(
+        StdioServerParameters(
+            command="npx",  # Matches the "command" in your config
+            args=[
+                "mcp-remote",
+                "https://mcp.api.coingecko.com/sse",  # Matches your endpoint
+            ],
+        )
+    )
+)
+
 @tool
 def crypto_market_analyst(query: str) -> str:
     """
@@ -94,23 +114,9 @@ def crypto_market_analyst(query: str) -> str:
         A detailed and helpful market analysis with citations
     """
 
-    # Connect to the CoinGecko MCP server - able to return live prices of tokens - coingecko_api_remote
-    coingecko_mcp_client = MCPClient(
-        lambda: stdio_client(
-            StdioServerParameters(
-                command="npx",  # Matches the "command" in your config
-                args=[
-                    "mcp-remote",
-                    "https://mcp.api.coingecko.com/sse",  # Matches your endpoint
-                ],
-            )
-        )
-    )
-
-    # Create a BedrockModel with specific LLM and region
-    bedrock_model = BedrockModel(model_id=INFERENCE_MODEL, region_name=REGION)
-
+    # Query the agent
     # Must use the MCP client in a context manager
+    # https://strandsagents.com/latest/documentation/docs/user-guide/concepts/tools/mcp-tools/
     with coingecko_mcp_client:
         # Get the tools from the MCP server
         coingecko_tools = coingecko_mcp_client.list_tools_sync()
@@ -122,7 +128,5 @@ def crypto_market_analyst(query: str) -> str:
             model=bedrock_model,
             tools=coingecko_tools,
         )
-
-        # Query the agent
         response = crypto_agent(query)
-        return response
+        return str(response)

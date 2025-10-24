@@ -1,5 +1,5 @@
 """
-Non specialized Agent using parsing model for knowledge
+Non specialized Agent Tool using parsing model for knowledge
 
 SETUP INSTRUCTIONS:
 1. CREDENTIALS:
@@ -27,7 +27,7 @@ os.environ["AWS_REGION"] = REGION
 
 # Define a general knowledge focused system prompt
 GENERAL_SYSTEM_PROMPT = """
-# General Knowledge Assistant
+# General Knowledge Assistant Agent Tool
 
 You are a friendly, helpful general-purpose assistant who can answer a wide variety of general knowledge questions clearly and accurately.
 
@@ -73,6 +73,19 @@ You are **not a specialist or expert** in any specific field, but you are capabl
 **You:** Gravity is the force that pulls things toward each other. It’s what keeps your feet on the ground and makes things fall when you drop them.
 """
 
+# NOTE define all of these outside the invoke function to avoid re-initialization on each call
+
+# Create a BedrockModel with specific LLM and region
+bedrock_model = BedrockModel(model_id=INFERENCE_MODEL, region_name=REGION)
+
+# Create the strands agent and add the KB to the agent's tools
+kb_agent = Agent(
+   name="GeneralKnowledgeAgent",
+   system_prompt=GENERAL_SYSTEM_PROMPT,
+   model=bedrock_model,
+   tools=[],
+)
+
 @tool
 def general_knowledge(query: str) -> str:
    """
@@ -86,17 +99,6 @@ def general_knowledge(query: str) -> str:
       A concise response to the general knowledge query
    """
 
-   # Create a BedrockModel with specific LLM and region
-   bedrock_model = BedrockModel(model_id=INFERENCE_MODEL, region_name=REGION)
-
-   # Create the strands agent and add the KB to the agent's tools
-   kb_agent = Agent(
-      name="GeneralKnowledgeAgent",
-      system_prompt=GENERAL_SYSTEM_PROMPT,
-      model=bedrock_model,
-      tools=[],
-   )
-
    # Query the agent
    response = kb_agent(query)
-   return response
+   return str(response)
