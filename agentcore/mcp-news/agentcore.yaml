@@ -1,0 +1,6 @@
+name: news-api-gateway
+runtime: python3.12
+handler: gateway_config.gateway
+environment:
+  OAUTH_TOKEN: your-oauth-token-here
+  API_URL: https://api.example.com/news
